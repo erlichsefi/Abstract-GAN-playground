@@ -17,10 +17,23 @@ inputfolder="photo_database_working_folder/"
 image_width=10
 image_higth=10
 image_channel=3
+genrtor_input_size=int(image_width*image_higth*image_channel*1.13)
+batch_size = 10
 
-
+# read the images
 onlyfiles = [os.path.join(inputfolder, f) for f in os.listdir(inputfolder) if os.path.isfile(os.path.join(inputfolder, f))]
-mnist =[cv2.imread(m) for m in onlyfiles]
+input_images =[cv2.imread(m).reshape(image_width*image_higth*image_channel) for m in onlyfiles] # will be m X image_width*image_higth*image_channel
+
+'''
+Return a total of `num` random samples and labels.
+'''
+def next_batch(num, data):
+    idx = np.arange(0 , len(data))
+    np.random.shuffle(idx)
+    idx = idx[:num]
+    data_shuffle = [data[i] for i in idx]
+    return np.asarray(data_shuffle)
+
 
 # Define the discriminator network
 # images size - [None,image_width,image_higth,image_channel]
@@ -76,10 +89,12 @@ def discriminator(images, reuse_variables=None):
 # random_dim - the dim of the random vector
 def generator(z, batch_size, random_dim):
 
-    first_layer_size=image_width*image_higth*image_channel
+    #
+    first_layer_size=2*image_width*image_higth*image_channel
     g_w1 = tf.get_variable('g_w1', [random_dim, first_layer_size], dtype=tf.float32, initializer=tf.truncated_normal_initializer(stddev=0.02))
     g_b1 = tf.get_variable('g_b1', [first_layer_size], initializer=tf.truncated_normal_initializer(stddev=0.02))
     g1 = tf.matmul(z, g_w1) + g_b1
+    # from a random vector genrate
     g1 = tf.reshape(g1, [-1, image_width, image_higth, image_channel])
     g1 = tf.contrib.layers.batch_norm(g1, epsilon=1e-5, scope='bn1')
     g1 = tf.nn.relu(g1)
@@ -115,16 +130,14 @@ def generator(z, batch_size, random_dim):
     return g4
 
 
-random_size = int(image_width*image_higth*image_channel*1.13)
-batch_size = 10
 
-z_placeholder = tf.placeholder(tf.float32, [None, random_size], name='z_placeholder')
+z_placeholder = tf.placeholder(tf.float32, [None, genrtor_input_size], name='z_placeholder')
 # z_placeholder is for feeding input noise to the generator
 
 x_placeholder = tf.placeholder(tf.float32, shape = [None,image_width,image_higth,image_channel], name='x_placeholder')
 # x_placeholder is for feeding input images to the discriminator
 
-Gz = generator(z_placeholder, batch_size, random_size)
+Gz = generator(z_placeholder, batch_size, genrtor_input_size)
 # Gz holds the generated images
 
 Dx = discriminator(x_placeholder)
@@ -162,7 +175,7 @@ tf.summary.scalar('Generator_loss', g_loss)
 tf.summary.scalar('Discriminator_loss_real', d_loss_real)
 tf.summary.scalar('Discriminator_loss_fake', d_loss_fake)
 
-images_for_tensorboard = generator(z_placeholder, batch_size, random_size)
+images_for_tensorboard = generator(z_placeholder, batch_size, genrtor_input_size)
 tf.summary.image('Generated_images', images_for_tensorboard, 5)
 merged = tf.summary.merge_all()
 logdir = "tensorboard/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S") + "/"
@@ -175,26 +188,26 @@ sess.run(tf.global_variables_initializer())
 
 # Pre-train discriminator
 for i in range(300):
-    z_batch = np.random.normal(0, 1, size=[batch_size, random_size])
-    real_image_batch = mnist.train.next_batch(batch_size)[0].reshape([batch_size, image_width, image_higth, image_channel])
+    z_batch = np.random.normal(0, 1, size=[batch_size, genrtor_input_size])
+    real_image_batch = next_batch(batch_size,mnist).reshape([batch_size, image_width, image_higth, image_channel])
     _, __, dLossReal, dLossFake = sess.run([d_trainer_real, d_trainer_fake, d_loss_real, d_loss_fake],
                                            {x_placeholder: real_image_batch, z_placeholder: z_batch})
 
 # Train generator and discriminator together
 for i in range(100000):
     real_image_batch = mnist.train.next_batch(batch_size)[0].reshape([batch_size, image_width, image_higth, image_channel])
-    z_batch = np.random.normal(0, 1, size=[batch_size, random_size])
+    z_batch = np.random.normal(0, 1, size=[batch_size, genrtor_input_size])
 
     # Train discriminator on both real and fake images
     _, __, dLossReal, dLossFake = sess.run([d_trainer_real, d_trainer_fake, d_loss_real, d_loss_fake],
                                            {x_placeholder: real_image_batch, z_placeholder: z_batch})
 
     # Train generator
-    z_batch = np.random.normal(0, 1, size=[batch_size, random_size])
+    z_batch = np.random.normal(0, 1, size=[batch_size, genrtor_input_size])
     _ = sess.run(g_trainer, feed_dict={z_placeholder: z_batch})
 
     if i % 10 == 0:
         # Update TensorBoard with summary statistics
-        z_batch = np.random.normal(0, 1, size=[batch_size, random_size])
+        z_batch = np.random.normal(0, 1, size=[batch_size, genrtor_input_size])
         summary = sess.run(merged, {z_placeholder: z_batch, x_placeholder: real_image_batch})
         writer.add_summary(summary, i)
