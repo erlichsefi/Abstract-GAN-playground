@@ -17,9 +17,8 @@ import tensorflow as tf
 import numpy as np
 import datetime
 import cv2,os
-
-# Load MNIST data
 from tensorflow.examples.tutorials.mnist import input_data
+
 inputfolder="/home/nehorg/Downloads/abstract_copy/"
 image_width=10
 image_higth=10
@@ -34,34 +33,34 @@ mnist =[cv2.imread(m) for m in onlyfiles]
 def discriminator(images, reuse_variables=None):
 
     with tf.variable_scope(tf.get_variable_scope(), reuse=reuse_variables) as scope:
-       
+
 	# input - [b_m,image_width,image_higth,image_channel]
 	# First convolutional and pool layers
         d_w1 = tf.get_variable('d_w1', [5, 5, image_channel, 32], initializer=tf.truncated_normal_initializer(stddev=0.02))
         d_b1 = tf.get_variable('d_b1', [32], initializer=tf.constant_initializer(0))
         d1 = tf.nn.conv2d(input=images, filter=d_w1, strides=[1, 1, 1, 1], padding='SAME')
-	
+
 	#  [b_m,image_width,image_higth,32]
         d1 = d1 + d_b1
         d1 = tf.nn.relu(d1)
         d1 = tf.nn.avg_pool(d1, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
-	#  [b_m,image_width/2,image_higth/2,32]	
+	#  [b_m,image_width/2,image_higth/2,32]
 
         # Second convolutional and pool layers
         # This finds 64 different 5 x 5 pixel features
         d_w2 = tf.get_variable('d_w2', [5, 5, 32, 64], initializer=tf.truncated_normal_initializer(stddev=0.02))
         d_b2 = tf.get_variable('d_b2', [64], initializer=tf.constant_initializer(0))
         d2 = tf.nn.conv2d(input=d1, filter=d_w2, strides=[1, 1, 1, 1], padding='SAME')
-	#  [b_m,image_width/2,image_higth/2,64]	
+	#  [b_m,image_width/2,image_higth/2,64]
         d2 = d2 + d_b2
         d2 = tf.nn.relu(d2)
         d2 = tf.nn.avg_pool(d2, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
 	#  output  [b_m,image_width/4,image_higth/4,64]
-     
+
         # First fully connected layer
         d=int((image_width/4)*(image_higth/4)*64)
         full_connected_layer_size=int(d/3)
-        
+
         d_w3 = tf.get_variable('d_w3', [d, full_connected_layer_size], initializer=tf.truncated_normal_initializer(stddev=0.02))
         d_b3 = tf.get_variable('d_b3', [full_connected_layer_size], initializer=tf.constant_initializer(0))
         d3 = tf.reshape(d2, [-1, d])
@@ -82,7 +81,7 @@ def discriminator(images, reuse_variables=None):
 # batch_size - number of images to genrate
 # random_dim - the dim of the random vector
 def generator(z, batch_size, random_dim):
-    
+
     first_layer_size=image_width*image_higth*image_channel
     g_w1 = tf.get_variable('g_w1', [random_dim, first_layer_size], dtype=tf.float32, initializer=tf.truncated_normal_initializer(stddev=0.02))
     g_b1 = tf.get_variable('g_b1', [first_layer_size], initializer=tf.truncated_normal_initializer(stddev=0.02))
@@ -91,7 +90,7 @@ def generator(z, batch_size, random_dim):
     g1 = tf.contrib.layers.batch_norm(g1, epsilon=1e-5, scope='bn1')
     g1 = tf.nn.relu(g1)
     #  [-1,image_width,image_higth,image_channel]
-    
+
     # Generate 50 features
     g_w2 = tf.get_variable('g_w2', [3, 3, image_channel, int(random_dim/2)], dtype=tf.float32, initializer=tf.truncated_normal_initializer(stddev=0.02))
     g_b2 = tf.get_variable('g_b2', [int(random_dim/2)], initializer=tf.truncated_normal_initializer(stddev=0.02))
@@ -101,7 +100,7 @@ def generator(z, batch_size, random_dim):
     g2 = tf.nn.relu(g2)
     g2 = tf.image.resize_images(g2, [image_width*2, image_higth*2])
 
-    # Generate 25 features 
+    # Generate 25 features
     g_w3 = tf.get_variable('g_w3', [3, 3, int(random_dim/2), int(random_dim/4)], dtype=tf.float32, initializer=tf.truncated_normal_initializer(stddev=0.02))
     g_b3 = tf.get_variable('g_b3', [int(random_dim/4)], initializer=tf.truncated_normal_initializer(stddev=0.02))
     g3 = tf.nn.conv2d(g2, g_w3, strides=[1, 2, 2, 1], padding='SAME')
