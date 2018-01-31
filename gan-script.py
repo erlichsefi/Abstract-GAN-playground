@@ -3,14 +3,7 @@ This is a straightforward Python implementation of a generative adversarial netw
 The code is drawn directly from the O'Reilly interactive tutorial on GANs
 (https://www.oreilly.com/learning/generative-adversarial-networks-for-beginners).
 
-A version of this model with explanatory notes is also available on GitHub
-at https://github.com/jonbruner/generative-adversarial-networks.
-
-This script requires TensorFlow and its dependencies in order to run. Please see
-the readme for guidance on installing TensorFlow.
-
-This script won't print summary statistics in the terminal during training;
-track progress and see sample images in TensorBoard.
+This is an genral implemention of the GANs
 """
 
 import tensorflow as tf
@@ -19,7 +12,8 @@ import datetime
 import cv2,os
 from tensorflow.examples.tutorials.mnist import input_data
 
-inputfolder="/home/nehorg/Downloads/abstract_copy/"
+# consts
+inputfolder="photo_database_working_folder/"
 image_width=10
 image_higth=10
 image_channel=3
