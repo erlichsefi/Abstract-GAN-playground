@@ -11,8 +11,8 @@ inside to one size, 2 options:
 mypath='photo_database_working_folder/'
 onlyfiles = [join(mypath, f) for f in listdir(mypath) if isfile(join(mypath, f))]
 findmin=False
-minwitdh=10
-minhigth=10
+minwitdh=16
+minhigth=16
 if (findmin):
 	minwitdh=sys.maxint
 	minhigth=sys.maxint
