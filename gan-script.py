@@ -24,13 +24,14 @@ batch_size = 10
 
 
 '''
-Return a total of `num` random samples and labels.
+Read and Return a total of `num` random samples and labels.
 '''
 def next_batch(num, data):
     idx = np.arange(0 , len(data))
     np.random.shuffle(idx)
     idx = idx[:num]
-    data_shuffle = [data[i] for i in idx]
+
+    data_shuffle = [cv2.imread(data[i]) for i in idx]
     return np.asarray(data_shuffle)
 
 
@@ -130,9 +131,8 @@ def generator(z, batch_size, random_dim):
     # Dimensions of g4: batch_size x image_width x image_higth x image_channel
     return g4
 
-# read the images
-onlyfiles = [os.path.join(inputfolder, f) for f in os.listdir(inputfolder) if (os.path.isfile(os.path.join(inputfolder, f)) and any(f.endswith(typ) for typ in ImageTypes))]
-input_images =[cv2.imread(m) for m in onlyfiles] # will be [m X image_width,image_higth,image_channel]
+# list the images
+input_images = [os.path.join(inputfolder, f) for f in os.listdir(inputfolder) if (os.path.isfile(os.path.join(inputfolder, f)) and any(f.endswith(typ) for typ in ImageTypes))]
 
 
 z_placeholder = tf.placeholder(tf.float32, [None, generator_input_size], name='z_placeholder')
