@@ -15,9 +15,9 @@ import cv2,os
 inputfolder="/mnt/c/Users/erlichsefi/Dropbox/Workspaces/Atom/gan/photo_database_working_folder/"
 ImageTypes=["jpg"]
 # image dim
-image_width=16
-image_higth=16
-image_channel=3
+image_width=386
+image_higth=386
+image_channel=1
 # the random noise vecor size
 generator_input_size=int(image_width*image_higth*image_channel*1.13)
 batch_size = 10
@@ -40,14 +40,15 @@ def discriminator(images, reuse_variables=None):
 
     with tf.variable_scope(tf.get_variable_scope(), reuse=reuse_variables) as scope:
 
+
+
 	    # First convolutional and pool layers input - [batch_size,image_width,image_higth,image_channel]
         l1_num_of_filters=32
         d_w1 = tf.get_variable('d_w1', [5, 5, image_channel, l1_num_of_filters], initializer=tf.truncated_normal_initializer(stddev=0.02))
         d_b1 = tf.get_variable('d_b1', [l1_num_of_filters], initializer=tf.constant_initializer(0))
         d1 = tf.nn.conv2d(input=images, filter=d_w1, strides=[1, 1, 1, 1], padding='SAME')
-    	#   output - [batch_size,image_width,image_higth,l1_num_of_filters]
-
         d1 = d1 + d_b1
+        #   output - [batch_size,image_width,image_higth,l1_num_of_filters]
         d1 = tf.nn.relu(d1)
         d1 = tf.nn.avg_pool(d1, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
 	   #  [b_m,image_width/2,image_higth/2,l1_num_of_filters]
